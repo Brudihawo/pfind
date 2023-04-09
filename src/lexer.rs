@@ -32,15 +32,13 @@ impl<'a> Lexer<'a> {
         self.skip_chars();
         let mut index = 0;
         for chr in self.content.chars() {
-            print!("{chr}");
-            if chr.is_alphabetic() {
+            if chr.is_alphanumeric() {
                 index += chr.len_utf8();
                 continue;
             }
             break;
         }
 
-        println!("{index}");
         let (tok, content) = self.content.split_at(index);
         if content.is_empty() {
             self.reached_end = true;

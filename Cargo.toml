@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-mupdf = "0.4.2"
+poppler = "0.3.2"

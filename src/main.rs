@@ -1,41 +1,41 @@
-use mupdf::document::Document;
+use pfind::document::Document;
 use pfind::lexer::Lexer;
+use std::collections::HashMap;
 use std::env::args;
-use std::error::Error;
 
-fn tokenize_page(text: &str) -> Vec<&str> {
-    Lexer::new(text).into_iter().collect()
+fn page_counts(text: &str) -> HashMap<String, usize> {
+    let mut ret = HashMap::new();
+    for token in Lexer::new(text) {
+        if let Some(occurrences) = ret.get_mut(token) {
+            *occurrences += 1;
+        } else {
+            ret.insert(token.to_string(), 1);
+        }
+    }
+    ret
 }
 
 fn main() {
-    let val = "tèsté";
+    let file_path = args().nth(1).expect("No name given");
 
-    for (i, chr) in val.char_indices() {
-        // let cb = val.is_char_boundary(i);
-        // let isalnum = chr.is_ascii_alphanumeric();
-        println!("{i}, {chr}");//, {cb} -> {isalnum}")
+    println!("Reading {file_path}");
+
+    let pdf = match poppler::PopplerDocument::new_from_file(&file_path, "") {
+        Err(err) => {
+            eprintln!("Could not open file '{file_path}': {err}");
+            return;
+        }
+        Ok(pdf) => pdf,
+    };
+
+    let mut doc = Document::new();
+    for page_no in 0..pdf.get_n_pages() {
+        if let Some(page_text) = pdf
+            .get_page(page_no)
+            .expect("page number is valid")
+            .get_text()
+        {
+            doc.push_page(Some(page_counts(&page_text)));
+        }
     }
-}
-
-fn main2() -> Result<(), Box<dyn Error>> {
-    let filename = args().nth(1).expect("No name given");
-
-    println!("Reading {filename}");
-
-    let document = Document::open(&filename)?;
-    if !document.is_pdf() {
-        eprintln!("{filename} is not a PDF. Exiting.");
-        return Ok(());
-    }
-
-    if document.needs_password().unwrap() {
-        eprintln!("{filename} needs password.")
-    }
-
-    for page in document.pages()? {
-        let page_text = page?.to_text()?;
-        let tokens = tokenize_page(&page_text);
-        print!("{tokens:?}")
-    }
-    Ok(())
 }
