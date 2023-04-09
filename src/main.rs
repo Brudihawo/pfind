@@ -1,8 +1,12 @@
+use num_cpus;
 use pfind::document::Document;
 use pfind::lexer::Lexer;
 use std::collections::HashMap;
 use std::env::args;
 use std::path::PathBuf;
+use std::sync::mpsc::channel;
+use std::sync::{Arc, Mutex};
+use std::thread;
 use walkdir::WalkDir;
 
 // TODO: make this an optional commandline option
@@ -54,6 +58,8 @@ fn get_document(file_path: &PathBuf) -> Result<Document, ()> {
     Ok(doc)
 }
 
+fn worker_thread(thread_id: usize, tx: std::sync::mpsc::Sender<Document>) {}
+
 fn main() {
     let in_path = PathBuf::from(args().nth(1).expect("No path given"));
 
@@ -81,9 +87,46 @@ fn main() {
                 }
             })
             .collect();
-        for file in files {
-            get_document(&file);
-            println!("{fpath}", fpath = file.display());
+        let files = Arc::new(Mutex::new(files));
+
+        let (tx, rx) = channel();
+
+        let mut handles = Vec::new();
+        for thread_id in 0..num_cpus::get() {
+            let (files, tx) = (Arc::clone(&files), tx.clone());
+            handles.push(thread::spawn(move || {
+                println!("Hello from thread {thread_id}");
+                loop {
+                    let file = {
+                        // TODO: handle errors
+                        if let Ok(mut files) = files.try_lock() {
+                            let file = files.pop();
+                            drop(files);
+                            file
+                        } else {
+                            eprintln!("{thread_id}: Could not acquire lock");
+                            None
+                        }
+                    };
+                    if let Some(file) = file {
+                        match get_document(&file) {
+                            Ok(doc) => tx.send(doc).unwrap(),
+                            Err(_) => (),
+                        }
+                        println!("{thread_id} {file}", file = file.display());
+                    } else {
+                        // break if pop returns None. this means the queue is empty
+                        break;
+                    }
+                }
+            }));
+        }
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+        for document in rx.try_iter() {
+            // TODO: actually use results
         }
     }
 }
