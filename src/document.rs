@@ -1,5 +1,10 @@
 use std::collections::HashMap;
 
+/// Struct representing the occurrences of words in a document.
+/// The document is built up while iterating the pages of the document using a pdf parsing library
+///
+/// * `page_occurrences`: occurrences of words per-page
+/// * `document_occurrences`: occurrences of words in a document
 pub struct Document {
     page_occurrences: Vec<Option<HashMap<String, usize>>>,
     // TODO: make page_occurrences and document_occurrences reference a word list to save memory
@@ -14,6 +19,9 @@ impl Document {
         }
     }
 
+    /// Add term frequency mapping for a page in the document
+    ///
+    /// * `page_occurrences`: term frequency mapping for the page. None if page has no words
     pub fn push_page(&mut self, page_occurrences: Option<HashMap<String, usize>>) {
         if let Some(page_occurrences) = page_occurrences {
             for (token, occ) in page_occurrences.iter() {

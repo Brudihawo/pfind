@@ -4,6 +4,9 @@ pub struct Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
+    /// Construct a new Lexer
+    ///
+    /// * `content`: Text to tokenize
     pub fn new(content: &'a str) -> Self {
         Self {
             content,
@@ -11,6 +14,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    /// skip ignored characters
     fn skip_chars(&mut self) {
         let mut index = 0;
         for chr in self.content.chars() {
@@ -24,6 +28,7 @@ impl<'a> Lexer<'a> {
         self.content = content;
     }
 
+    /// output next token. outputs None if end of token stream is reached
     fn next_token(&mut self) -> Option<&'a str> {
         if self.reached_end {
             return None;
