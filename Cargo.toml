@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 poppler = "0.3.2"
+walkdir = "2.3.3"
