@@ -47,7 +47,9 @@ impl<'a> Lexer<'a> {
         let (tok, content) = self.content.split_at(index);
         if content.is_empty() {
             self.reached_end = true;
-            return None;
+            if tok.is_empty() {
+                return None;
+            }
         }
         self.content = content;
         return Some(tok);
@@ -94,5 +96,19 @@ mod test {
             tokens,
             ["The", "quick", "dogé", "jumps", "ovêrre", "le", "lazy", "fròge"]
         );
+    }
+
+    #[test]
+    fn empty() {
+        let lexer = Lexer::new("");
+        let tokens = lexer.into_iter().collect::<Vec<_>>();
+        assert_eq!(tokens, Vec::<&str>::new());
+    }
+
+    #[test]
+    fn one() {
+        let lexer = Lexer::new("The");
+        let tokens = lexer.into_iter().collect::<Vec<_>>();
+        assert_eq!(tokens, ["The"]);
     }
 }
