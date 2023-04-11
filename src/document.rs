@@ -9,6 +9,7 @@ pub struct Document {
     page_occurrences: Vec<Option<HashMap<String, usize>>>,
     // TODO: make page_occurrences and document_occurrences reference a word list to save memory
     document_occurrences: HashMap<String, usize>,
+    word_count: usize,
 }
 
 impl Document {
@@ -16,6 +17,7 @@ impl Document {
         Self {
             document_occurrences: HashMap::new(),
             page_occurrences: Vec::new(),
+            word_count: 0,
         }
     }
 
@@ -25,6 +27,7 @@ impl Document {
     pub fn push_page(&mut self, page_occurrences: Option<HashMap<String, usize>>) {
         if let Some(page_occurrences) = page_occurrences {
             for (token, occ) in page_occurrences.iter() {
+                self.word_count += occ;
                 if let Some(num) = self.document_occurrences.get_mut(token) {
                     *num += occ;
                 } else {
@@ -35,5 +38,23 @@ impl Document {
         } else {
             self.page_occurrences.push(None);
         }
+    }
+
+    /// get term occurrences in document
+    ///
+    /// * `term`: term to compute frequency for
+    pub fn occurrences(&self, term: &str) -> usize {
+        self.document_occurrences.get(term).map(|x| *x).unwrap_or(0)
+    }
+}
+
+struct DocumentSet {
+    docs: Vec<Document>,
+}
+
+impl DocumentSet {
+    pub fn tf_idf(&self, term: &str) {
+        let occurrences: Vec<usize> = self.docs.iter().map(|doc| doc.occurrences(term)).collect();
+        let all_occs = 
     }
 }
