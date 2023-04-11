@@ -10,14 +10,16 @@ pub struct Document {
     // TODO: make page_occurrences and document_occurrences reference a word list to save memory
     document_occurrences: HashMap<String, usize>,
     word_count: usize,
+    file: String,
 }
 
 impl Document {
-    pub fn new() -> Self {
+    pub fn new(fname: String) -> Self {
         Self {
             document_occurrences: HashMap::new(),
             page_occurrences: Vec::new(),
             word_count: 0,
+            file: fname,
         }
     }
 
@@ -48,13 +50,47 @@ impl Document {
     }
 }
 
-struct DocumentSet {
+pub struct DocumentSet {
     docs: Vec<Document>,
 }
 
 impl DocumentSet {
-    pub fn tf_idf(&self, term: &str) {
-        let occurrences: Vec<usize> = self.docs.iter().map(|doc| doc.occurrences(term)).collect();
-        let all_occs = 
+    pub fn new(docs: Vec<Document>) -> Self {
+        Self { docs }
+    }
+
+    pub fn get_name(&self, idx: usize) -> &str {
+        &self.docs[idx].file
+    }
+
+    pub fn tf_idf(&self, terms: Vec<String>) -> Vec<f64> {
+        let num_docs = self.docs.len();
+        let mut occs_tf = Vec::<(usize, f64)>::with_capacity(num_docs);
+        let mut tf_idf: Vec<f64> = (0..num_docs).map(|_| 0.0).collect();
+
+        for term in terms.iter() {
+            occs_tf.extend(self.docs.iter().map(|doc| {
+                let occs = doc.occurrences(term);
+                (
+                    occs,
+                    if doc.word_count != 0 {
+                        occs as f64 / doc.word_count as f64
+                    } else {
+                        0.0
+                    },
+                )
+            }));
+
+            let occs_total = occs_tf
+                .iter()
+                .fold(0, |acc, (occ, _)| if occ > &0 { acc + 1 } else { acc });
+            let idf = (num_docs as f64 / (1.0 + occs_total as f64)).log10();
+            let idf = if idf == std::f64::NAN { 0.0 } else { idf };
+            for (val, (_, tf)) in tf_idf.iter_mut().zip(&occs_tf) {
+                *val += tf * idf;
+            }
+            occs_tf.clear();
+        }
+        tf_idf
     }
 }

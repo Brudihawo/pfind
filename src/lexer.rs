@@ -29,7 +29,7 @@ impl<'a> Lexer<'a> {
     }
 
     /// output next token. outputs None if end of token stream is reached
-    fn next_token(&mut self) -> Option<&'a str> {
+    fn next_token(&mut self) -> Option<String> {
         if self.reached_end {
             return None;
         }
@@ -52,12 +52,12 @@ impl<'a> Lexer<'a> {
             }
         }
         self.content = content;
-        return Some(tok);
+        return Some(tok.to_lowercase());
     }
 }
 
 impl<'a> Iterator for Lexer<'a> {
-    type Item = &'a str;
+    type Item = String;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.next_token()
@@ -74,7 +74,7 @@ mod test {
         let tokens = lexer.into_iter().collect::<Vec<_>>();
         assert_eq!(
             tokens,
-            ["The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"]
+            ["the", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"]
         );
     }
 
@@ -84,7 +84,7 @@ mod test {
         let tokens = lexer.into_iter().collect::<Vec<_>>();
         assert_eq!(
             tokens,
-            ["The", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"]
+            ["the", "quick", "brown", "fox", "jumps", "over", "the", "lazy", "dog"]
         );
     }
 
@@ -94,7 +94,7 @@ mod test {
         let tokens = lexer.into_iter().collect::<Vec<_>>();
         assert_eq!(
             tokens,
-            ["The", "quick", "dogé", "jumps", "ovêrre", "le", "lazy", "fròge"]
+            ["the", "quick", "dogé", "jumps", "ovêrre", "le", "lazy", "fròge"]
         );
     }
 
@@ -109,6 +109,6 @@ mod test {
     fn one() {
         let lexer = Lexer::new("The");
         let tokens = lexer.into_iter().collect::<Vec<_>>();
-        assert_eq!(tokens, ["The"]);
+        assert_eq!(tokens, ["the"]);
     }
 }
